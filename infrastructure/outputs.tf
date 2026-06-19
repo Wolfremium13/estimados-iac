@@ -15,11 +15,6 @@ output "key_vault_name" {
   value       = azurerm_key_vault.key_vault.name
 }
 
-output "key_vault_uri" {
-  description = "URI of the Key Vault"
-  value       = azurerm_key_vault.key_vault.vault_uri
-}
-
 # Resource Group outputs
 output "resource_group_name" {
   description = "Name of the resource group"
@@ -29,17 +24,6 @@ output "resource_group_name" {
 output "resource_group_location" {
   description = "Location of the resource group"
   value       = data.azurerm_resource_group.rg.location
-}
-
-# Storage outputs
-output "storage_account_name" {
-  description = "Name of the Storage Account for uploads"
-  value       = azurerm_storage_account.storage.name
-}
-
-output "storage_container_name" {
-  description = "Name of the Storage Container for uploads"
-  value       = azurerm_storage_container.uploads.name
 }
 
 # Deployment summary
