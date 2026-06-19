@@ -1,0 +1,16 @@
+# IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local environment files
+*.env
+.env

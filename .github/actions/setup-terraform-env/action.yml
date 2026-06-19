@@ -1,0 +1,46 @@
+name: 'Setup Terraform Environment'
+description: 'Sets up common Terraform environment configuration and Azure authentication'
+
+inputs:
+  file-vars:
+    description: 'Path to environment variables file'
+    required: true
+  azure-credentials:
+    description: 'Azure credentials JSON'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get env variables from files
+      uses: cardinalby/export-env-action@v2
+      with:
+        envFile: ${{ inputs.file-vars }}
+        expand: true
+
+    - name: Extract credentials from secrets
+      shell: bash
+      env:
+        CREDS_SECRET: ${{ inputs.azure-credentials }}
+      run: |
+        secret_value="$CREDS_SECRET"
+        echo "CLIENT_ID=$(echo $secret_value | jq -r '.clientId')" >> $GITHUB_ENV
+        echo "SUBSCRIPTION_ID=$(echo $secret_value | jq -r '.subscriptionId')" >> $GITHUB_ENV
+        echo "TENANT_ID=$(echo $secret_value | jq -r '.tenantId')" >> $GITHUB_ENV
+        echo "CLIENT_SECRET=$(echo $secret_value | jq -r '.clientSecret')" >> $GITHUB_ENV
+        
+        # Set ARM environment variables for Terraform
+        echo "ARM_CLIENT_ID=$(echo $secret_value | jq -r '.clientId')" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=$(echo $secret_value | jq -r '.subscriptionId')" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=$(echo $secret_value | jq -r '.tenantId')" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=$(echo $secret_value | jq -r '.clientSecret')" >> $GITHUB_ENV
+        echo "ARM_USE_OIDC=false" >> $GITHUB_ENV
+        
+        # Set TF_VAR variables for Terraform input variables
+        echo "TF_VAR_subscription_id=$(echo $secret_value | jq -r '.subscriptionId')" >> $GITHUB_ENV
+        echo "TF_VAR_tenant_id=$(echo $secret_value | jq -r '.tenantId')" >> $GITHUB_ENV
+
+    - name: 'Azure CLI login'
+      uses: azure/login@v2.2.0
+      with:
+        creds: ${{ inputs.azure-credentials }}

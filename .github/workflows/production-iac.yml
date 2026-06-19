@@ -1,0 +1,203 @@
+name: "es-timados - IAC (PROD)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Select action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+      confirm_apply:
+        description: 'Type "CONFIRM" to proceed with apply (required for apply action)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  id-token: write # OIDC login
+  contents: read
+
+env:
+  WORKING_DIRECTORY: "/infrastructure"
+  FILE_VARS: "/env/production.env"
+  CREDS_SECRET: "AZURE_CREDENTIALS"
+  TFVARS_FILE: "production.tfvars"
+
+jobs:
+  plan:
+    name: "✨ Terraform Init & Plan"
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply'
+    outputs:
+      hasChanges: ${{ steps.tf-plan.outputs.exitcode == '2' }}
+      hasErrors: ${{ steps.tf-plan.outputs.exitcode == '1' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment and credentials
+        uses: ./.github/actions/setup-terraform-env
+        with:
+          file-vars: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}${{ env.FILE_VARS }}
+          azure-credentials: ${{ secrets[env.CREDS_SECRET] }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "${{ env.terraform_version }}"
+      
+      - name: Terraform Init
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        run: |
+          terraform init \
+            -backend-config="subscription_id=$ARM_SUBSCRIPTION_ID" \
+            -backend-config="resource_group_name=${{ env.resource_group_name }}" \
+            -backend-config="storage_account_name=${{ env.storage_account_name }}" \
+            -backend-config="container_name=${{ env.container_name }}" \
+            -backend-config="key=${{ env.terraform_file_name }}"
+
+      - name: Terraform Validate
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        run: terraform validate
+
+      - name: Terraform Format Check
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: false
+
+      - name: Terraform Plan
+        id: tf-plan
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        env:
+          TF_VAR_docker_registry_username: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+          TF_VAR_docker_registry_password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # 0: no changes | 1: Error | 2: Changes 
+          terraform plan -var-file="${{ env.TFVARS_FILE }}" -detailed-exitcode -out=tfplan
+
+      - name: Create Plan Summary
+        shell: bash
+        if: github.event.inputs.action == 'plan'
+        run: |
+          echo "## 📋 Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Review the Plan" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Check the output above** in the 'Terraform Plan' step" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Review all changes** carefully before applying" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Verify resource configurations** match your expectations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔄 How to Apply Changes" >> $GITHUB_STEP_SUMMARY
+          echo "To deploy the infrastructure:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to **Actions** → **es-timados - IAC (PROD)**" >> $GITHUB_STEP_SUMMARY
+          echo "2. Click **Run workflow**" >> $GITHUB_STEP_SUMMARY
+          echo "3. Select **apply** from the dropdown" >> $GITHUB_STEP_SUMMARY
+          echo "4. Type **CONFIRM** in the confirmation field" >> $GITHUB_STEP_SUMMARY
+          echo "5. Click **Run workflow** to deploy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Important Notes" >> $GITHUB_STEP_SUMMARY
+          echo "- Only proceed if you understand all the changes" >> $GITHUB_STEP_SUMMARY
+          echo "- The confirmation text must be exactly **CONFIRM** (case sensitive)" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployment will fail if confirmation is incorrect" >> $GITHUB_STEP_SUMMARY
+      
+  validation:
+    name: "🔐 Validate Apply Request"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'apply'
+    outputs:
+      is_valid: ${{ steps.validate.outputs.is_valid }}
+    
+    steps:
+      - name: Validate confirmation
+        id: validate
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.confirm_apply }}" = "CONFIRM" ]; then
+            echo "is_valid=true" >> $GITHUB_OUTPUT
+            echo "✅ Apply confirmation validated successfully"
+          else
+            echo "is_valid=false" >> $GITHUB_OUTPUT
+            echo "❌ Apply confirmation failed. You must type 'CONFIRM' exactly to proceed with deployment."
+            echo ""
+            echo "## ❌ Deployment Cancelled" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Reason**: Confirmation text was not provided correctly" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Expected**: \`CONFIRM\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Received**: \`${{ github.event.inputs.confirm_apply }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### To deploy, please:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Run the workflow again" >> $GITHUB_STEP_SUMMARY
+            echo "2. Select **apply** action" >> $GITHUB_STEP_SUMMARY
+            echo "3. Type **CONFIRM** exactly in the confirmation field" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+  deploy-plan:
+    name: "🚀 Terraform Apply"
+    needs: [plan, validation]
+    runs-on: ubuntu-latest
+    environment: production
+    if: |
+      github.event.inputs.action == 'apply' && 
+      needs.validation.outputs.is_valid == 'true' && 
+      needs.plan.outputs.hasChanges == 'true' &&
+      needs.plan.outputs.hasErrors == 'false'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment and credentials
+        uses: ./.github/actions/setup-terraform-env
+        with:
+          file-vars: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}${{ env.FILE_VARS }}
+          azure-credentials: ${{ secrets[env.CREDS_SECRET] }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "${{ env.terraform_version }}"
+      
+      - name: Terraform Init
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        run: |
+          terraform init \
+            -backend-config="subscription_id=$ARM_SUBSCRIPTION_ID" \
+            -backend-config="resource_group_name=${{ env.resource_group_name }}" \
+            -backend-config="storage_account_name=${{ env.storage_account_name }}" \
+            -backend-config="container_name=${{ env.container_name }}" \
+            -backend-config="key=${{ env.terraform_file_name }}"
+
+      - name: Apply Terraform Plan
+        id: tf-apply
+        working-directory: ${{ github.workspace }}${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        env:
+          TF_VAR_docker_registry_username: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+          TF_VAR_docker_registry_password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "Applying Terraform changes..."
+          
+          # Apply changes - exits immediately on error
+          terraform apply -var-file="${{ env.TFVARS_FILE }}" -auto-approve
+          
+          # Create success summary
+          echo "## Terraform Apply Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Apply completed successfully** - All changes applied" >> $GITHUB_STEP_SUMMARY
