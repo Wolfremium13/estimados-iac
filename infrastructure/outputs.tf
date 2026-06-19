@@ -9,12 +9,6 @@ output "app_service_url" {
   value       = "https://${azurerm_linux_web_app.api.default_hostname}"
 }
 
-# Key Vault outputs
-output "key_vault_name" {
-  description = "Name of the Key Vault"
-  value       = azurerm_key_vault.key_vault.name
-}
-
 # Resource Group outputs
 output "resource_group_name" {
   description = "Name of the resource group"

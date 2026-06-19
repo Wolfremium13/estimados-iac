@@ -72,12 +72,6 @@ resource "azurerm_linux_web_app" "api" {
   lifecycle {
     ignore_changes = [tags]
   }
-
-  depends_on = [
-    azurerm_key_vault_secret.storage_account_name_estimados,
-    azurerm_key_vault_secret.storage_access_key_estimados,
-    azurerm_key_vault_secret.storage_container_estimados
-  ]
 }
 
 # Key Vault access policy for App Service
