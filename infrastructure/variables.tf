@@ -15,6 +15,13 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "location" {
+  description = "The Azure region where resources should be created. If not specified, the resource group location will be used."
+  type        = string
+  default     = null
+}
+
+
 variable "docker_image" {
   description = "The Docker image to deploy (e.g., ghcr.io/wolfremium13/es-timados-api:latest)"
   type        = string

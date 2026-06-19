@@ -1,6 +1,6 @@
 # resource "azurerm_logic_app_workflow" "telegram_notifications" {
 #   name                = "${local.project_name}-${local.environment}-telegram-alerts"
-#   location            = data.azurerm_resource_group.rg.location
+#   location            = local.location
 #   resource_group_name = data.azurerm_resource_group.rg.name
 
 #   tags = local.tags

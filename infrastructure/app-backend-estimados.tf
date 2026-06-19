@@ -2,7 +2,7 @@
 resource "azurerm_service_plan" "api" {
   name                = "${local.project_name}-${local.environment}-asp"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
+  location            = local.location
   os_type             = "Linux"
   sku_name            = "F1" # Free Plan (F1)
 
@@ -18,7 +18,7 @@ resource "azurerm_service_plan" "api" {
 resource "azurerm_linux_web_app" "api" {
   name                = "${local.project_name}-${local.environment}-api"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
+  location            = local.location
   service_plan_id     = azurerm_service_plan.api.id
   https_only          = true
 
