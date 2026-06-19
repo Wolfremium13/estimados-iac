@@ -37,12 +37,12 @@ Follow these steps to prepare your Azure environment for Terraform state storage
 
 2. **Create the Resource Group:**
    ```bash
-   az group create --name es-timados-rg --location eastus
+   az group create --name es-timados-rg --location northeurope
    ```
 
 3. **Create the Storage Account for Terraform State:**
    ```bash
-   az storage account create --name estimadosiac --resource-group es-timados-rg --location eastus --sku Standard_LRS
+   az storage account create --name estimadosiac --resource-group es-timados-rg --location northeurope --sku Standard_LRS
    ```
 
 4. **Create the Blob Container for the State File:**
@@ -53,7 +53,7 @@ Follow these steps to prepare your Azure environment for Terraform state storage
 5. **Create a Service Principal for GitHub Actions:**
    Run the following command (replace `<subscription-id>` with your Azure subscription ID):
    ```bash
-   az ad sp create-for-rbac --name "es-timados-sp" --role Contributor --scopes /subscriptions/<subscription-id>/resourceGroups/es-timados-rg --sdk-auth
+   az ad sp create-for-rbac --name "es-timados-sp" --role Contributor --scopes /subscriptions/feaebcc1-54dd-45e9-a65d-e07fd2aabdbf/resourceGroups/es-timados-rg --sdk-auth
    ```
    > **Note:** Save the JSON output from this command. It is used to authenticate GitHub Actions to Azure.
 
