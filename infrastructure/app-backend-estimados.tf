@@ -46,11 +46,6 @@ resource "azurerm_linux_web_app" "api" {
     "PORT"                         = "8080"
     "WEBSITES_PORT"                = "8080"
     "WEBSITES_INCLUDE_CLOUD_CERTS" = "true"
-    
-    # Storage configuration keys mapped to Key Vault secrets (matching reference structure)
-    "AZURE_STORAGE_ACCOUNT"        = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.key_vault.name};SecretName=azure-storage-account-estimados)"
-    "AZURE_STORAGE_ACCESS_KEY"     = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.key_vault.name};SecretName=azure-storage-access-key-estimados)"
-    "AZURE_STORAGE_CONTAINER"      = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.key_vault.name};SecretName=azure-storage-container-estimados)"
   }
 
   # Logging configuration
