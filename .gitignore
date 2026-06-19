@@ -11,6 +11,3 @@
 crash.log
 crash.*.log
 
-# Local environment files
-*.env
-.env
