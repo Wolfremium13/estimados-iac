@@ -34,7 +34,7 @@ resource "azurerm_linux_web_app" "api" {
     # always_on is enabled on Basic tier (B1)
     always_on                         = true
     health_check_path                 = "/health"
-    health_check_eviction_time_in_min = 10 # Required when health_check_path is specified
+    health_check_eviction_time_in_min = 2 # Required when health_check_path is specified
     http2_enabled                     = true
     use_32_bit_worker                 = false # Basic tier supports 64-bit workers
   }
