@@ -33,53 +33,30 @@ The container receives all environment variables needed:
 - Application settings (ASPNETCORE_ENVIRONMENT, PORT, etc.)
 
 ### Authentication
-For private repositories, the system uses:
-- **Username**: GitHub username (`DOCKER_REGISTRY_SERVER_USERNAME` secret)
-- **Password**: GitHub Personal Access Token (`DOCKER_REGISTRY_PASSWORD` secret)
-- **Storage**: Securely stored in Azure Key Vault and referenced by the Web App configuration.
+The Docker image is public, so no container registry credentials are required or configured for the Web App to pull the image.
 
 ## Setup Process
 
-### 1. Create GitHub Personal Access Token (PAT)
 
-1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Create a new token with permissions:
-   - `read:packages` ✅ (required)
-3. Copy the token (starts with `ghp_`)
-
-### 2. Configure GitHub Repository Secrets
-
-In your repository settings, add these secrets:
-
-**DOCKER_REGISTRY_SERVER_USERNAME**
-```
-your-github-username
-```
-
-**DOCKER_REGISTRY_PASSWORD**
-```
-ghp_xxxxxxxxxxxxxxxxxxxx
-```
-
-### 3. Update Docker Image Version
+### 1. Update Docker Image Version
 
 Edit `infrastructure/production.tfvars` if you want to deploy a specific version:
 ```hcl
 docker_image = "ghcr.io/wolfremium13/es-timados-api:v1.0.0"
 ```
 
-### 4. Deploy via GitHub Actions
+### 2. Deploy via GitHub Actions
 
 1. Go to **Actions** → **es-timados - IAC (PROD)**
 2. Click **Run workflow**
 3. Select **apply** and type **CONFIRM**
-4. The system will automatically use the GitHub secrets for authentication during apply.
+4. The system will trigger Terraform to apply the changes.
 
 ## Deployment Flow
 
-1. **GitHub Actions** retrieves Docker registry credentials from repository secrets and sets them as environment variables during Terraform apply.
-2. **Terraform** updates Azure App Service with the credentials.
-3. **Azure App Service** pulls the Docker image using the stored credentials.
+1. **GitHub Actions** triggers the Terraform apply workflow.
+2. **Terraform** configures Azure App Service with the target public Docker image.
+3. **Azure App Service** pulls the public Docker image from `ghcr.io` anonymously (without registry credentials).
 4. **Container** starts with all environment variables configured.
 5. **Application** starts and is ready to serve requests.
 

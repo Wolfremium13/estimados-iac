@@ -68,8 +68,6 @@ Follow these steps to prepare your Azure environment for Terraform state storage
 | Secret Name | Description | Example/Format |
 |-------------|-------------|----------------|
 | `AZURE_CREDENTIALS` | The JSON output from the service principal creation step. | `{"clientId": "...", "clientSecret": "...", ...}` |
-| `DOCKER_REGISTRY_SERVER_USERNAME` | Username for the GitHub Container Registry. | `your-github-username` |
-| `DOCKER_REGISTRY_PASSWORD` | Personal Access Token (PAT) with `read:packages` scope. | `ghp_xxxxxxxxxxxxxxxxxxxx` |
 | `TELEGRAM_BOT_TOKEN` | Bot token provided by `@BotFather`. | `1234567890:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX` |
 | `TELEGRAM_CHAT_ID` | Telegram chat or group ID where alerts will be delivered. | `-1001234567890` (negative for groups) |
 

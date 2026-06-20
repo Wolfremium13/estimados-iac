@@ -27,10 +27,8 @@ resource "azurerm_linux_web_app" "api" {
 
   site_config {
     application_stack {
-      docker_image_name        = var.docker_image
-      docker_registry_url      = "https://ghcr.io"
-      docker_registry_username = var.docker_registry_username
-      docker_registry_password = var.docker_registry_password
+      docker_image_name   = var.docker_image
+      docker_registry_url = "https://ghcr.io"
     }
 
     # always_on is enabled on Basic tier (B1)
