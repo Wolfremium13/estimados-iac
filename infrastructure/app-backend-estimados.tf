@@ -1,10 +1,10 @@
-# App Service Plan for Estimados on Free tier (F1)
+# App Service Plan for Estimados on Basic tier (B1)
 resource "azurerm_service_plan" "api" {
   name                = "${local.project_name}-${local.environment}-asp"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = local.location
   os_type             = "Linux"
-  sku_name            = "F1" # Free Plan (F1)
+  sku_name            = "B1" # Basic Plan (B1)
 
   tags = local.tags
 
@@ -22,7 +22,7 @@ resource "azurerm_linux_web_app" "api" {
   service_plan_id     = azurerm_service_plan.api.id
   https_only          = true
 
-  # VNet integration is disabled on the Free tier (F1) App Service
+  # VNet integration is supported on B1 but not configured here
   # virtual_network_subnet_id is omitted
 
   site_config {
@@ -33,12 +33,12 @@ resource "azurerm_linux_web_app" "api" {
       docker_registry_password = var.docker_registry_password
     }
 
-    # always_on must be false on F1 (Free) tier
-    always_on                         = false
+    # always_on is enabled on Basic tier (B1)
+    always_on                         = true
     health_check_path                 = "/health"
     health_check_eviction_time_in_min = 10 # Required when health_check_path is specified
     http2_enabled                     = true
-    use_32_bit_worker                 = true # Free tier standard
+    use_32_bit_worker                 = false # Basic tier supports 64-bit workers
   }
 
   app_settings = {
