@@ -27,7 +27,7 @@ resource "azurerm_linux_web_app" "api" {
 
   site_config {
     application_stack {
-      docker_image_name   = var.docker_image
+      docker_image_name   = replace(var.docker_image, "ghcr.io/", "")
       docker_registry_url = "https://ghcr.io"
     }
 

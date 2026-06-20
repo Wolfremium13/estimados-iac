@@ -24,7 +24,7 @@ Azure Key Vault (Credentials)
 
 ### Docker Image
 - **Registry**: `ghcr.io`
-- **Default Image**: `ghcr.io/wolfremium13/es-timados-api:latest`
+- **Default Image**: `wolfremium13/es-timados-api:latest`
 - **Tag**: Configurable via `production.tfvars`
 
 ### Environment Variables
@@ -42,7 +42,7 @@ The Docker image is public, so no container registry credentials are required or
 
 Edit `infrastructure/production.tfvars` if you want to deploy a specific version:
 ```hcl
-docker_image = "ghcr.io/wolfremium13/es-timados-api:v1.0.0"
+docker_image = "wolfremium13/es-timados-api:v1.0.0"
 ```
 
 ### 2. Deploy via GitHub Actions

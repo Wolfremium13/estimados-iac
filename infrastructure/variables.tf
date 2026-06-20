@@ -23,9 +23,9 @@ variable "location" {
 
 
 variable "docker_image" {
-  description = "The Docker image to deploy (e.g., ghcr.io/wolfremium13/es-timados-api:latest)"
+  description = "The Docker image to deploy (e.g., wolfremium13/es-timados-api:latest)"
   type        = string
-  default     = "ghcr.io/wolfremium13/es-timados-api:latest"
+  default     = "wolfremium13/es-timados-api:latest"
 }
 
 variable "docker_registry_username" {
